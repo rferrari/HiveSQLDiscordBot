@@ -1,69 +1,174 @@
-import os
 import discord
-from discord.ext import tasks
-from dotenv import load_dotenv
-import pypyodbc
-from table2ascii import table2ascii as t2a, PresetStyle
+from config import DISCORD_CONFIG, DB_CONFIG, LLM_CONFIG, DEBUG_MODE
+from database import Database
+from commands import CommandHandler
+from langchain.chains import create_sql_query_chain
+from langchain_core.prompts import PromptTemplate
+from collections import defaultdict
+from datetime import datetime, timedelta
+from discord.ext import commands
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationBufferMemory
 
-load_dotenv()
+class HiveSQLBot(discord.Client):
+    def __init__(self):
+        intents = discord.Intents.default()
+        intents.message_content = True
+        intents.messages = True
+        super().__init__(command_prefix='!', intents=intents)
+        
+        self.db = Database(DB_CONFIG)
+        
+        # Add command aliases
+        self.command_aliases = {
+            'aiquery': ['!aiquery', '!ai', '!ask'],
+            'hivesql': ['!hivesql', '!sql', '!query'],
+            'tablelist': ['!tablelist', '!tables', '!tl'],
+            'tableinfo': ['!tableinfo', '!info', '!ti'],
+            'help': ['!help', '!h', '!?']
+        }
 
-discordToken = os.environ.get("DISCORD_TOKEN")
-discordAdmin = os.environ.get("DISCORD_ADMIN_ID")
+        # Create reverse lookup for faster command matching
+        self.alias_to_command = {
+            alias: cmd for cmd, aliases in self.command_aliases.items()
+            for alias in aliases
+        }
 
-hivesqlServer = os.environ.get("HIVESQL_SERVER")
-hivesqlDatabase = os.environ.get("HIVESQL_DATABASE")
-hivesqlUser = os.environ.get("HIVESQL_USER")
-hivesqlPwd = os.environ.get("HIVESQL_PWD")
+        # Create SQL generation LLM
+        self.sql_llm = self._setup_llm(temperature=0.1, name="SQL-Generator")
+        # Create separate evaluator LLM
+        self.eval_llm = self._setup_llm(temperature=0.7, name="Table-Evaluator")
+        
+        # Could not make create_sql_prompt work 100%
+        #self.query_evaluator = self.eval_llm
+        # sql_prompt = self._create_sql_prompt()
+        # self.llm_chain = create_sql_query_chain(
+        #     self.sql_llm,
+        #     self.db.db,
+        #     prompt=sql_prompt
+        # )
+        
+        self.command_handler = CommandHandler(self.db, self.sql_llm, self.eval_llm)
+        
+        # Add cooldown tracking
+        self.cooldowns = defaultdict(lambda: datetime.now() - timedelta(seconds=self.COOLDOWN_DURATION+1))
+        self.COOLDOWN_DURATION = 25  # seconds between commands
+        self.MAX_DAILY_QUERIES = 20  # max queries per user per day
+        self.daily_queries = defaultdict(int)
+        self.last_reset = datetime.now()
 
-intents = discord.Intents.all()
-client = discord.Client(command_prefix='!', intents=intents)
- 
-@client.event
-async def on_ready():
-    print('We have logged in as {0.user}'.format(client))
- 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
- 
-    if message.content.startswith('hi'):
-        await message.channel.send(message.author)
+    async def on_ready(self):
+        print(f'Ready! Logged in as {self.user}')
 
-    if message.content.startswith('!hivesql'):
-        params = message.content.split(" ", 1)
-        SQLCommand = params[1]
+    async def on_message(self, message):
+        if message.author.bot:
+            return
 
-        connection = pypyodbc.connect('Driver={ODBC Driver 17 for SQL Server};'
-                                        'Server='+hivesqlServer+';'
-                                        'Database='+hivesqlDatabase+';'
-                                        'uid='+hivesqlUser+';'
-                                        'pwd='+hivesqlPwd)
+        # Check and reset daily limits
+        now = datetime.now()
+        if (now - self.last_reset) > timedelta(days=1):
+            self.daily_queries.clear()
+            self.last_reset = now
 
-        cursor = connection.cursor()
-        result = cursor.execute(SQLCommand)
-        result = result.fetchmany(100)
-        connection.close()
+        # Check rate limits
+        user_id = str(message.author.id)
 
-        #print(result)
+        if user_id not in DISCORD_CONFIG["admin_id"]:
+            time_since_last = now - self.cooldowns[user_id]
+        
+            if time_since_last.total_seconds() < self.COOLDOWN_DURATION:
+                await message.channel.send(
+                    f"Please wait {self.COOLDOWN_DURATION - int(time_since_last.total_seconds())} "
+                    "seconds before using another command."
+                )
+                return
 
-        header = []
-        for column in cursor.description:
-            header.append(column[0])
+            # Update cooldown only for non-admin users
+            self.cooldowns[user_id] = now
 
-        output = t2a(
-            header=header,
-            body=result,
-            style=PresetStyle.thin_compact
-        )
+            # Check daily limit
+            if self.daily_queries[user_id] >= self.MAX_DAILY_QUERIES:
+                await message.channel.send(
+                    f"You've reached your daily limit of {self.MAX_DAILY_QUERIES} queries. "
+                    "Please try again tomorrow."
+                )
+                return
 
-        f = open("sqlresult.txt", "w")
-        f.write(output)
-        f.close()
-        await message.channel.send(file=discord.File(r'sqlresult.txt'))
-        #await message.channel.send(f"```\n{output}\n```")
-        return
-    
+        # Update cooldown and query count
+        self.cooldowns[user_id] = now
+        self.daily_queries[user_id] += 1
 
- 
-client.run(discordToken)
+        # Process the command
+        command = message.content.split()[0].lower()
+        if command not in self.alias_to_command:
+            return
+        
+        try:
+            # Show typing indicator while processing
+            async with message.channel.typing():
+                # if message.content.startswith('!aiquery'):
+                if any(alias == command for alias in self.command_aliases['aiquery']):
+                    query = message.content[len(command):].strip()    # Remove the actual command used from message
+                    response = await self.command_handler.handle_aiquery(query)
+                    await message.channel.send(file=discord.File(response))
+
+                elif any(alias == command for alias in self.command_aliases['hivesql']):
+                    query = message.content[len(command):].strip()
+                    response = await self.command_handler.handle_hivesql(query)
+                    await message.channel.send(file=discord.File(response))
+
+                elif any(alias == command for alias in self.command_aliases['tablelist']):
+                    query = message.content[len(command):].strip()
+                    response = await self.command_handler.handle_tablelist(query)
+                    await message.channel.send(response)
+
+                elif any(alias == command for alias in self.command_aliases['tableinfo']):
+                    response = await self.command_handler.handle_tableinfo(message)
+                    await message.channel.send(response)
+
+                elif any(alias == command for alias in self.command_aliases['help']):
+                    response = await self.command_handler.handle_help(message)
+                    await message.channel.send(response)
+
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            await message.channel.send(f"An error occurred: {str(e)}")
+
+    def _setup_llm(self, temperature, name):
+        # Initialize LLM based on available API key
+        if LLM_CONFIG["groq_api_key"]:
+            from langchain_groq import ChatGroq
+            selected_model = LLM_CONFIG["model"] or "gemma2-9b-it"
+            llm = ChatGroq(
+                model=selected_model,
+                temperature=temperature,
+                max_tokens=LLM_CONFIG["max_tokens"],
+                api_key=LLM_CONFIG["groq_api_key"]
+            )
+            print(f"Selected Groq LLM model: {selected_model} for {name}")
+        
+        elif LLM_CONFIG["openai_api_key"]:
+            from langchain_openai import ChatOpenAI
+            selected_model = LLM_CONFIG["model"] or "gpt-4o-mini" #"gpt-3.5-turbo"
+            llm = ChatOpenAI(
+                model=selected_model,
+                temperature=temperature,
+                max_tokens=LLM_CONFIG["max_tokens"],
+                api_key=LLM_CONFIG["openai_api_key"]
+            )
+            print(f"Selected OpenAI LLM model: {selected_model} for {name}")
+        
+        else:
+            raise ValueError("No API key found for either Groq or OpenAI")
+        
+        return llm
+
+
+
+if __name__ == "__main__":
+    print("-"*30)
+    print("HiveSQL Discord Bot")
+    print("Starting up...")
+    print("")
+    bot = HiveSQLBot()
+    bot.run(DISCORD_CONFIG["token"])
