@@ -1,16 +1,13 @@
 # Discord and environment
-discord.py
+discord
 python-dotenv
-pypyodbc
 table2ascii
 
 # AI and LangChain packages
-langchain
-langchain-core
 langchain-community
 langchain-groq
 langchain-openai
-openai
+# openai
 
 # Database and SQL handling
 sqlalchemy

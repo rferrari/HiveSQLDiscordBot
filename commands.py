@@ -3,9 +3,9 @@ import asyncio
 from config import DEBUG_MODE
 from table2ascii import table2ascii as t2a, PresetStyle
 from langchain_core.prompts import PromptTemplate
-from langchain_core.prompts import ChatPromptTemplate
-from langchain.chains import create_sql_query_chain
-from langchain_core.runnables import RunnablePassthrough
+# from langchain_core.prompts import ChatPromptTemplate
+# from langchain.chains import create_sql_query_chain
+# from langchain_core.runnables import RunnablePassthrough
 
 class CommandHandler:
     def __init__(self, db, llm_chain, query_evaluator):

@@ -2,13 +2,13 @@ import discord
 from config import DISCORD_CONFIG, DB_CONFIG, LLM_CONFIG, DEBUG_MODE
 from database import Database
 from commands import CommandHandler
-from langchain.chains import create_sql_query_chain
-from langchain_core.prompts import PromptTemplate
+# from langchain.chains import create_sql_query_chain
+# from langchain_core.prompts import PromptTemplate
 from collections import defaultdict
 from datetime import datetime, timedelta
-from discord.ext import commands
-from langchain.chains import ConversationChain
-from langchain.memory import ConversationBufferMemory
+# from discord.ext import commands
+# from langchain.chains import ConversationChain
+# from langchain.memory import ConversationBufferMemory
 
 class HiveSQLBot(discord.Client):
     def __init__(self):
