@@ -3,9 +3,6 @@ import asyncio
 from config import DEBUG_MODE
 from table2ascii import table2ascii as t2a, PresetStyle
 from langchain_core.prompts import PromptTemplate
-# from langchain_core.prompts import ChatPromptTemplate
-# from langchain.chains import create_sql_query_chain
-# from langchain_core.runnables import RunnablePassthrough
 
 class CommandHandler:
     def __init__(self, db, llm_chain, query_evaluator):
@@ -33,7 +30,7 @@ class CommandHandler:
     async def handle_tablelist(self, message):
         """Handle !tablelist command - shows all available tables"""
         try:
-            tables = self.db.tables_list
+            tables = self.db.get_tables_list()
             response = "Available Tables:\n```sql\n"
             response += tables
             response += "\n```"
@@ -55,7 +52,7 @@ class CommandHandler:
             table_name = params[1].lower()  # Get second word and convert to lowercase
             
             # Search for matching table schema in database schemas
-            matching_schemas = [schema for schema in self.db.tables_schema.split('\n')
+            matching_schemas = [schema for schema in self.db.get_tables_schema().split('\n')
                               if table_name in schema.lower()]
             
             if matching_schemas:
@@ -80,7 +77,7 @@ class CommandHandler:
 
             formatted_prompt = help_context.format(
                         help_text=help_text,
-                        tables_list=self.db.get_tables_info()
+                        tables_list=self.db.get_tables_list()
                     )
             if (DEBUG_MODE):
                 print("Formatted Prompt:", formatted_prompt)
@@ -161,7 +158,7 @@ class CommandHandler:
         evaluator_prompt = self._create_evaluator_prompt(query_text)
         formatted_prompt = evaluator_prompt.format(
                         input=query_text,
-                        tables_list=self.db.tables_list
+                        tables_list=self.db.get_tables_list()
                     )
         if (DEBUG_MODE):
             print("Formatted Prompt:", formatted_prompt)
@@ -187,7 +184,7 @@ class CommandHandler:
         relevant_schemas = {}
         for table in suggested_tables:
             try:
-                schema = self.db.tables_schema_full.get(table)
+                schema = self.db.get_tables_schema_full().get(table)
                 if schema:
                     relevant_schemas[table] = schema
                     if (DEBUG_MODE):
