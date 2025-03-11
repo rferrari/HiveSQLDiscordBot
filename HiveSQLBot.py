@@ -2,13 +2,8 @@ import discord
 from config import DISCORD_CONFIG, DB_CONFIG, LLM_CONFIG, DEBUG_MODE
 from database import Database
 from commands import CommandHandler
-# from langchain.chains import create_sql_query_chain
-# from langchain_core.prompts import PromptTemplate
 from collections import defaultdict
 from datetime import datetime, timedelta
-# from discord.ext import commands
-# from langchain.chains import ConversationChain
-# from langchain.memory import ConversationBufferMemory
 
 class HiveSQLBot(discord.Client):
     def __init__(self):
@@ -34,10 +29,15 @@ class HiveSQLBot(discord.Client):
             for alias in aliases
         }
 
+        # Create evaluator LLM
+        self.eval_llm = self._setup_llm(
+            temperature=LLM_CONFIG["eval_temp"], 
+            name="Tables-Evaluator")
+
         # Create SQL generation LLM
-        self.sql_llm = self._setup_llm(temperature=0.1, name="SQL-Generator")
-        # Create separate evaluator LLM
-        self.eval_llm = self._setup_llm(temperature=0.7, name="Table-Evaluator")
+        self.sql_llm = self._setup_llm(
+            temperature=LLM_CONFIG["query_temp"], 
+            name="SQL-Generator")
         
         # Could not make create_sql_prompt work 100%
         #self.query_evaluator = self.eval_llm
@@ -51,9 +51,10 @@ class HiveSQLBot(discord.Client):
         self.command_handler = CommandHandler(self.db, self.sql_llm, self.eval_llm)
         
         # Add cooldown tracking
+        self.COOLDOWN_DURATION = DISCORD_CONFIG["cool_down_duration"]
+        self.MAX_DAILY_QUERIES = DISCORD_CONFIG["max_daily_queries"]
+
         self.cooldowns = defaultdict(lambda: datetime.now() - timedelta(seconds=self.COOLDOWN_DURATION+1))
-        self.COOLDOWN_DURATION = 25  # seconds between commands
-        self.MAX_DAILY_QUERIES = 20  # max queries per user per day
         self.daily_queries = defaultdict(int)
         self.last_reset = datetime.now()
 
@@ -134,32 +135,32 @@ class HiveSQLBot(discord.Client):
             print(f"Error: {str(e)}")
             await message.channel.send(f"An error occurred: {str(e)}")
 
-    def _setup_llm(self, temperature, name):
+    def _setup_llm(self, temperature, name, model=""):
+        if not LLM_CONFIG["groq_api_key"] and not LLM_CONFIG["openai_api_key"]:
+            raise ValueError("No API keys found. At least one of GROQ_API_KEY or OPENAI_API_KEY must be configured")
+
         # Initialize LLM based on available API key
         if LLM_CONFIG["groq_api_key"]:
             from langchain_groq import ChatGroq
-            selected_model = LLM_CONFIG["model"] or "gemma2-9b-it"
+            selected_model = model or LLM_CONFIG["groq_model"]
             llm = ChatGroq(
                 model=selected_model,
                 temperature=temperature,
                 max_tokens=LLM_CONFIG["max_tokens"],
                 api_key=LLM_CONFIG["groq_api_key"]
             )
-            print(f"Selected Groq LLM model: {selected_model} for {name}")
+            print(f"Groq Model: {selected_model} {temperature} for {name}")
         
         elif LLM_CONFIG["openai_api_key"]:
             from langchain_openai import ChatOpenAI
-            selected_model = LLM_CONFIG["model"] or "gpt-4o-mini" #"gpt-3.5-turbo"
+            selected_model = model or LLM_CONFIG["openai_model"]
             llm = ChatOpenAI(
                 model=selected_model,
                 temperature=temperature,
                 max_tokens=LLM_CONFIG["max_tokens"],
                 api_key=LLM_CONFIG["openai_api_key"]
             )
-            print(f"Selected OpenAI LLM model: {selected_model} for {name}")
-        
-        else:
-            raise ValueError("No API key found for either Groq or OpenAI")
+            print(f"OpenAI Model: {selected_model} {temperature} for {name}")
         
         return llm
 
