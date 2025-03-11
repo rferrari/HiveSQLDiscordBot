@@ -1,8 +1,4 @@
-This is a solid write-up—clear, structured, and informative. But if you want it to feel more human, a bit more chill, and Hive-community-friendly, let’s tweak the tone slightly. Here's a more engaging, community-oriented version:
-
----
-
-# 🚀 Building a HiveSQL Discord Bot with AI Magic!  
+# 🚀 HiveSQL Discord Bot with AI Magic!  
 
 Ever wished you could just **ask** a database a question instead of writing complex SQL queries? Well, that’s exactly what this project does! The **HiveSQL Discord Bot** lets you interact with a SQL database using natural language, making querying easier and more intuitive. Let’s dive into the cool stuff this bot can do!  
 
@@ -10,11 +6,11 @@ Ever wished you could just **ask** a database a question instead of writing comp
 
 ## 🔥 What This Bot Brings to the Table  
 
-- **💬 Ask in English, Get SQL** – Just type your question, and the bot will generate the SQL query for you.  
-- **🖥️ Run SQL Directly** – If you’re more hands-on, you can execute queries manually.  
-- **📊 Explore Database Schema** – Check out available tables and their structures.  
-- **🧠 AI Assistance** – Stuck on an error? The bot can explain and guide you through it.  
-- **⚡ Built-in Rate Limits** – Keeps things smooth and prevents spam.  
+- **💬 Ask in Natural Language, Get SQL** – Just type your question, and the bot will generate the SQL query for you.
+- **🖥️ Run SQL Directly** – If you’re more hands-on, you can execute queries manually.
+- **📊 Explore Database Schema** – Check out available tables and their structures.
+- **🧠 AI Assistance** – Stuck on an error? The bot can explain and guide you through it.
+- **⚡ Built-in Rate Limits** – Keeps things smooth and prevents spam.
 
 ---
 
@@ -43,14 +39,14 @@ Every bot command goes through here. It handles:
 Everything is neatly organized in one place, including:  
 ✅ Discord bot settings  
 ✅ Database connection details  
-✅ AI model configuration (OpenAI, Groq, etc.)  
-✅ Query limitations  
+✅ AI model configuration, supporting OpenAI and Groq
+✅ Query limitations
 
 ---
 
 ## 🧠 AI-Powered Querying  
 
-This bot isn’t just running SQL—it’s **thinking** (well, kind of). Thanks to **LangChain**, it can:  
+This bot isn’t just running SQL, it’s **thinking** (well, kind of). Thanks to **LangChain**, it can:  
 💡 Convert human language into SQL queries  
 🤖 Explain errors and suggest fixes  
 📖 Help users understand database structures  
@@ -89,11 +85,11 @@ This is just the beginning! Future improvements could include:
 - **Smarter query validation**  
 - **Interactive query builder** for a more hands-on experience  
 - **Query history & analytics**  
-- **Plot Graphics**
+- **Plot Graphics** why not?!
 
 ---
 
-This bot is a perfect example of how **AI + SQL + Discord** can come together to create something truly useful. Whether you're a SQL pro or just starting out, it makes database interaction **way more intuitive**!  
+This bot is an example of how **AI + SQL + Discord** can come together to create something truly useful. Whether you're a SQL pro or just starting out, it makes database interaction **way more intuitive**!  
 
 🔗 **Check out the code on GitHub**: [GitHub Link](https://github.com/rferrari/HiveSQLDiscordBot)  
 
@@ -136,7 +132,7 @@ pip install -r requirements.txt
 
 ## Let's install the ODBC driver
 
-2. Add the Microsoft repository for Debian (since Kali is Debian-based):
+2. Add the Microsoft repository for Debian:
 ```bash
 curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
 curl https://packages.microsoft.com/config/debian/11/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
@@ -150,14 +146,14 @@ sudo apt-get install -y unixodbc-dev
 ```
 
 
-5. Verify the installation:
+4. Verify the installation:
 ```bash
 odbcinst -j
 ```
 
 Let's set up the ODBC driver configuration:
 
-1. Create the ODBC driver configuration:
+5. Create the ODBC driver configuration:
 
 ```bash
 sudo bash -c 'cat > /etc/odbcinst.ini << EOL
@@ -168,7 +164,7 @@ UsageCount=1
 EOL'
 ```
 
-3. Verify the driver is properly registered:
+6. Verify the driver is properly registered:
 
 ```bash
 odbcinst -q -d
@@ -186,7 +182,7 @@ sudo chown root:root /etc/odbcinst.ini
 
 ## Configure Environment Variables 
 
-Copy sample.env to .env and configure file with the following:
+7. Copy sample.env to .env and configure file with the following:
 
 ```
 DISCORD_TOKEN=your_discord_bot_token
@@ -232,17 +228,6 @@ Use the `!tableinfo` command followed by a table name to see its structure:
 ```
 This will show the complete schema for the specified table, including all columns and their types.
 
-### Commands Aliases
-
-|||||
-|-|-|-|-|
-|AI Query|!aiquery|!ai|!ask|
-|hive SQL|!hivesql|!sql|!query|
-|Tables list|!tablelist|!tables|!tl|
-|Table info|!tableinfo|!info|!ti|
-|Help|!help|!h|!?|
-
-
 ## Query Guidelines 📋
 - Queries are automatically limited to 100 rows
 - Use proper table and column names as shown in `!tableinfo`
@@ -283,9 +268,6 @@ This will show the complete schema for the specified table, including all column
 -Commit your changes
 -Push to the branch
 -Create a Pull Request
-
-# License 📄
-As is
 
 # Disclaimer ⚠️
 This bot is provided as-is. Always be cautious when running SQL queries and ensure proper access controls.
