@@ -208,3 +208,7 @@ As is
 
 # Disclaimer ⚠️
 This bot is provided as-is. Always be cautious when running SQL queries and ensure proper access controls.
+
+
+# TODO
+- plot graphics using panda
