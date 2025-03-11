@@ -76,7 +76,7 @@ class Database:
         
         except Exception as e:
             print(f"Error: {str(e)}")
-            return [], []
+            raise
 
 
     def get_tables_list(self):

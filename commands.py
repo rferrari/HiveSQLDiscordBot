@@ -10,13 +10,21 @@ class CommandHandler:
         self.llm_chain = llm_chain
         self.query_eval = query_evaluator
 
-    async def handle_hivesql(self, sql_query):
+    async def handle_hivesql(self, sql_query, user_display_name):
         # sql_query = message.content.split(" ", 1)[1]
-        rows, header = await self.db.execute_query(sql_query)
-        return await self._format_response(None, rows, header)
+        try:
+            rows, header = await self.db.execute_query(sql_query)
+            # Check if the query returned empty results
+            if not rows or not header:
+                return "Query executed, but no results found. Please check your query."
+            return await self._format_response(None, rows, header)
+        except Exception as e:
+            ai_explain = await self.handle_help(
+                "Explain and/or suggest new query for this error format:\n" + str(e), user_display_name, False)
+            return f"{ai_explain}\n\n```\n{str(e)}\n```"
+        
 
-
-    async def handle_aiquery(self, message):
+    async def handle_aiquery(self, message, user_display_name):
         """Handle !aiquery command - try to create sql query from text"""
         # Use retry logic
         sql_query, rows, header = await self.retry_sql_generation(message)
@@ -27,7 +35,7 @@ class CommandHandler:
             raise Exception("Failed to generate valid SQL query")
 
 
-    async def handle_tablelist(self, message):
+    async def handle_tablelist(self, message, user_display_name):
         """Handle !tablelist command - shows all available tables"""
         try:
             tables = self.db.get_tables_list()
@@ -41,11 +49,11 @@ class CommandHandler:
             return (f"An error occurred: {str(e)}")
 
 
-    async def handle_tableinfo(self, message):
+    async def handle_tableinfo(self, message, user_display_name):
         """Handle !tableinfo command - shows schema for specific table"""
         try:
             # Split message and get second word
-            params = message.content.split()
+            params = message.split()
             if len(params) < 2:
                 return "Please specify a table name. Usage: !tableinfo <tablename>"
             
@@ -69,15 +77,22 @@ class CommandHandler:
             return (f"An error occurred: {str(e)}")
 
 
-    async def handle_help(self, help_text):
+    async def handle_help(self, help_text, user_display_name, include_tables=True):
         """Handle !help command - provides conversational help about tables and queries"""
         try:
             # Create help context with available information
             help_context = self._create_help_prompt()
 
+            if (include_tables):
+                tables_list = self.db.get_tables_list()
+            else:
+                tables_list = ""
+
             formatted_prompt = help_context.format(
                         help_text=help_text,
-                        tables_list=self.db.get_tables_list()
+                        tables_list=tables_list,
+                        username=user_display_name,
+                        dialect="mssql"
                     )
             if (DEBUG_MODE):
                 print("Formatted Prompt:", formatted_prompt)
@@ -278,7 +293,7 @@ Try Other Table or Fix Colluns names exactly how is described on schema.
         """
         # Define the SQL prompt template
         SQL_PROMPT = """
-You are a {dialect} expert. Given an input question, create a syntactically correct SQL query to run.
+You are a {dialect} expert. Given an input question, create a syntactically correct T-SQL query to run.
 
 # Key T-SQL Guidelines:
 - If user asks for specific number (e.g., "last post", "last 5 posts"), use that number after TOP
@@ -317,9 +332,9 @@ RESPOND ONLY THE SQL Query:
         Create a custom SQL query prompt template for SQL query generation.
         Args: top_k (int, optional): Default number of rows to limit in queries. Defaults to 5.
         Returns: PromptTemplate: A prompt template for SQL query generation
-        """    
+        """
         TABLE_SELECTION_PROMPT = """
-You are an expert SQL database analyst tasked with selecting the most relevant tables to answer a specific user query.
+You are an expert mssql T-SQL database analyst tasked with selecting the most relevant tables to answer a specific user query.
 
 # Task Guidelines:
 - Carefully analyze the user's question and the available tables
@@ -363,35 +378,34 @@ You are an expert SQL database analyst tasked with selecting the most relevant t
     
     def _create_help_prompt(self):
         HELP_PROMPT = """
-You are a helpful SQL assistant. Help users understand how to query the Hive blockchain data.
+You are a helpful {dialect} T-SQL assistant. Help {username} understand how to query the Hive blockchain data.
 
-Available Commands:
+{username} Question: {help_text}
+
+Provide a helpful response with examples if applicable in Discord Markdown text.
+
+# Queries Helper
+- Always place TOP N immediately after SELECT: 'SELECT TOP N column1, column2'
+- Always Use square brackets [] for table and column names
+
+# Available Commands:
 - !aiquery: Generate SQL queries from natural language
 - !hivesql: Execute direct SQL queries
 - !tablelist: Show all available tables
 - !tableinfo: Show specific table schema
+- !help: Ask question so I can help
 
-Available Tables and Their Purpose:
+# Available Tables and Their Purpose:
 {tables_list}
 
-# command_aliases
+# Command Aliases
 'aiquery': ['!aiquery', '!ai', '!ask'],
 'hivesql': ['!hivesql', '!sql', '!query'],
 'tablelist': ['!tablelist', '!tables', '!tl'],
 'tableinfo': ['!tableinfo', '!info', '!ti'],
 'help': ['!help', '!h', '!?']
-
-Common Use Cases:
-1. Finding posts: Use Comments table with title <> ''
-2. Finding comments: Use Comments table with title = ''
-3. Tracking transfers: Use TxTransfers table
-4. Blockchain data: Use Transactions table
-5. Treasury/funding: Use VODHFFundings table
-
-User Question: {help_text}
-Provide a helpful response with examples if applicable in Discord Markdown text.
 """
         return PromptTemplate(
-            input_variables=['tables_list', 'help_text'],
+            input_variables=['tables_list', 'help_text', 'dialect', 'username'],
             template=HELP_PROMPT
         )

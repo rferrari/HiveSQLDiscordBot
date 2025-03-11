@@ -59,7 +59,8 @@ class HiveSQLBot(discord.Client):
         self.last_reset = datetime.now()
 
     async def on_ready(self):
-        print(f'Ready! Logged in as {self.user}')
+        print(f'Logged in Discord as {self.user}')
+        print(f'Ready!')
 
     async def on_message(self, message):
         if message.author.bot:
@@ -73,6 +74,7 @@ class HiveSQLBot(discord.Client):
 
         # Check rate limits
         user_id = str(message.author.id)
+        user_display_name = message.author.display_name
 
         if user_id not in DISCORD_CONFIG["admin_id"]:
             time_since_last = now - self.cooldowns[user_id]
@@ -110,25 +112,32 @@ class HiveSQLBot(discord.Client):
                 # if message.content.startswith('!aiquery'):
                 if any(alias == command for alias in self.command_aliases['aiquery']):
                     query = message.content[len(command):].strip()    # Remove the actual command used from message
-                    response = await self.command_handler.handle_aiquery(query)
-                    await message.channel.send(file=discord.File(response))
+                    response = await self.command_handler.handle_aiquery(query, user_display_name)
+                    await message.channel.send(
+                        content=f"{user_display_name}, here is your query results:", 
+                        file=discord.File(response))
 
                 elif any(alias == command for alias in self.command_aliases['hivesql']):
                     query = message.content[len(command):].strip()
-                    response = await self.command_handler.handle_hivesql(query)
-                    await message.channel.send(file=discord.File(response))
+                    response = await self.command_handler.handle_hivesql(query, user_display_name)
+                    if (response == "sqlresult.txt"):
+                        await message.channel.send(
+                            content=f"{user_display_name}, here is your query results:", 
+                            file=discord.File(response))
+                    else:
+                        await message.channel.send(response)
 
                 elif any(alias == command for alias in self.command_aliases['tablelist']):
                     query = message.content[len(command):].strip()
-                    response = await self.command_handler.handle_tablelist(query)
+                    response = await self.command_handler.handle_tablelist(query, user_display_name)
                     await message.channel.send(response)
 
                 elif any(alias == command for alias in self.command_aliases['tableinfo']):
-                    response = await self.command_handler.handle_tableinfo(message)
+                    response = await self.command_handler.handle_tableinfo(message.content, user_display_name)
                     await message.channel.send(response)
 
                 elif any(alias == command for alias in self.command_aliases['help']):
-                    response = await self.command_handler.handle_help(message)
+                    response = await self.command_handler.handle_help(message.content, user_display_name)
                     await message.channel.send(response)
 
         except Exception as e:
