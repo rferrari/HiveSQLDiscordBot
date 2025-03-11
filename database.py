@@ -79,6 +79,15 @@ class Database:
             return [], []
 
 
-    def get_tables_info(self):
-        """Return formatted table schema for LLM prompt"""
+    def get_tables_list(self):
+        """Return formatted table list for LLM prompt"""
         return self.tables_list
+    
+    def get_tables_schema(self):
+        """Return formatted table schema with NO fields types for LLM prompt"""
+        return self.tables_schema
+    
+    def get_tables_schema_full(self):
+        """Return formatted table schema with fields types for LLM prompt"""
+        return self.tables_schema_full
+    
