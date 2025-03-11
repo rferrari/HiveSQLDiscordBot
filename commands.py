@@ -11,6 +11,7 @@ class CommandHandler:
         self.query_eval = query_evaluator
 
     async def handle_hivesql(self, sql_query, user_display_name):
+        """Handle !hivesql command - execute user query"""
         # sql_query = message.content.split(" ", 1)[1]
         try:
             rows, header = await self.db.execute_query(sql_query)
@@ -50,7 +51,7 @@ class CommandHandler:
 
 
     async def handle_tableinfo(self, message, user_display_name):
-        """Handle !tableinfo command - shows schema for specific table"""
+        """Handle !tableinfo table_name - shows schema for specific table"""
         try:
             # Split message and get second word
             params = message.split()
@@ -107,6 +108,7 @@ class CommandHandler:
             return (f"An error occurred: {str(e)}")
 
     async def _format_response(self, sql_query, rows, header):
+        """Format response data to readable table format"""
         output = t2a(
             header=header,
             body=rows,
@@ -121,7 +123,7 @@ class CommandHandler:
         return "sqlresult.txt"
     
     def extract_JsonContent(self, text):
-        # Try to extract SQL inside Markdown code blocks with language from different models response
+        # Extract SQL query block from different models response
         match = re.search(r'```json\n(.*?)\n```', text, re.DOTALL)
         if match:
             return match.group(1).strip()
@@ -167,9 +169,12 @@ class CommandHandler:
         text = re.sub(r'\\(.)', r'\1', text)  # Remove escape characters
         return text.strip()
     
+
     async def retry_sql_generation(self, query_text, max_retries=3, retry_delay=2):
+        """Attempt to execute Ai Query Max_Retries, if fail, ask ai to rebuild search query"""
         last_error = None
         
+        # get relevants tables based on user input
         evaluator_prompt = self._create_evaluator_prompt(query_text)
         formatted_prompt = evaluator_prompt.format(
                         input=query_text,
@@ -296,6 +301,7 @@ Try Other Table or Fix Colluns names exactly how is described on schema.
 You are a {dialect} expert. Given an input question, create a syntactically correct T-SQL query to run.
 
 # Key T-SQL Guidelines:
+- IMPORTANT: DO NOT create DELETE, UPDATE, INSERT sql statements
 - If user asks for specific number (e.g., "last post", "last 5 posts"), use that number after TOP
 - If no number specified, default to TOP {top_k}
 - Query columns necessary to answer the specific question.
