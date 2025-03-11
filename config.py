@@ -9,7 +9,7 @@ DEBUG_MODE = os.environ.get("DEBUG_MODE", "false").lower() == "true"
 DISCORD_CONFIG = {
     "token": os.environ.get("DISCORD_TOKEN"),
     "admin_id": os.environ.get("DISCORD_ADMIN_ID"),
-    "cool_down_duration": 25,
+    "cool_down_duration": 2,
     "max_daily_queries": 25
 }
 
