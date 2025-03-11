@@ -298,28 +298,28 @@ Try Other Table or Fix Colluns names exactly how is described on schema.
         """
         # Define the SQL prompt template
         SQL_PROMPT = """
-You are a {dialect} expert. Given an input question, create a syntactically correct T-SQL query to run.
+You are an expert in {dialect}. Given an input question, generate a syntactically correct T-SQL query.
 
-# Key T-SQL Guidelines:
-- IMPORTANT: DO NOT create DELETE, UPDATE, INSERT sql statements
-- If user asks for specific number (e.g., "last post", "last 5 posts"), use that number after TOP
-- If no number specified, default to TOP {top_k}
-- Query columns necessary to answer the specific question.
-- Always place TOP N immediately after SELECT: 'SELECT TOP N column1, column2'
-- Always Use square brackets [] for table and column names
-- Use table and columns name as specified in the Schema
-- Pay attention to use only Tables and column names you can see in the Schema.
+# **Key T-SQL Guidelines:**
+- **IMPORTANT: DO NOT create DELETE, UPDATE, or INSERT statements.**
+- If the user asks for a specific number (e.g., "last post", "last 5 posts"), use that number after `TOP`.
+- If no number is specified, default to `TOP {top_k}`.
+- Query only the necessary columns to answer the question.
+- Always place `TOP N` immediately after `SELECT`: `SELECT TOP N column1, column2`.
+- Always use square brackets `[ ]` for table and column names.
+- Use table and columns names as specified in the schema.
+- **Only use tables and columns that are present in the schema.**
 
-# Query Constraints:
-- Ignore ID collum, just used for internal database usage
-- Accounts username is on [name] column
-- Finding posts: Use Comments table with title <> ''
-- Finding comments: Use Comments table with title = ''
-- Tracking transfers: Use TxTransfers table (maybe users request transactions intead transfers)
-- Blockchain data: Use Transactions table
-- Treasury/funding: Use VODHFFundings table
+# **Query Constraints:**
+- **Ignore the `ID` column** (used only for internal database purposes).
+- The **username** in the `Accounts` table is stored in the `[name]` column.
+- **Finding posts:** Use the `Comments` table where `title <> ''`.
+- **Finding comments:** Use the `Comments` table where `title = ''`.
+- **Tracking transfers:** Use the `TxTransfers` table.
+- **Blockchain data:** Use the `Transactions` table.
+- **Treasury/funding:** Use the `VODHFFundings` table.
 
-# Tables Schema:
+# **Tables Schema:**
 {table_info}
 
 Question: {input}
