@@ -1,30 +1,111 @@
-# HiveSQLDiscordBot 📊🔗
+This is a solid write-up—clear, structured, and informative. But if you want it to feel more human, a bit more chill, and Hive-community-friendly, let’s tweak the tone slightly. Here's a more engaging, community-oriented version:
 
-## Overview
-HiveSQLDiscordBot is a powerful Discord bot that allows users to interact with HiveSQL databases directly through Discord channels. It offers two primary query modes:
+---
 
-- Direct SQL Querying
-- AI-Powered Natural Language Querying
+# 🚀 Building a HiveSQL Discord Bot with AI Magic!  
 
-## Features ✨
+Ever wished you could just **ask** a database a question instead of writing complex SQL queries? Well, that’s exactly what this project does! The **HiveSQL Discord Bot** lets you interact with a SQL database using natural language, making querying easier and more intuitive. Let’s dive into the cool stuff this bot can do!  
 
-### 1. Direct SQL Queries
-- Use `!hivesql` command to run direct SQL queries
-- Supports Microsoft SQL Server
-- Limits results to 100 rows for performance
+---
 
-### 2. AI-Powered Querying
-- Use `!aiquery` command to ask questions in natural language
-- Leverages Groq's Llama3 model to translate natural language to SQL
-- Intelligent query generation with built-in safety constraints
+## 🔥 What This Bot Brings to the Table  
 
-## Prerequisites 🛠️
+- **💬 Ask in English, Get SQL** – Just type your question, and the bot will generate the SQL query for you.  
+- **🖥️ Run SQL Directly** – If you’re more hands-on, you can execute queries manually.  
+- **📊 Explore Database Schema** – Check out available tables and their structures.  
+- **🧠 AI Assistance** – Stuck on an error? The bot can explain and guide you through it.  
+- **⚡ Built-in Rate Limits** – Keeps things smooth and prevents spam.  
+
+---
+
+## 🏗️ Code Structure
+
+### 🟢 1. The Discord Bot (HiveSQLBot.py)  
+Handles everything on Discord, from user commands to admin controls. It also:  
+✅ Supports command shortcuts  
+✅ Includes a cooldown system  
+✅ Manages errors and gives feedback  
+
+### 🛢️ 2. Database Handler (database.py)  
+This is where all the SQL magic happens. It takes care of:  
+✅ Connecting to the database (HiveSQL, in this case)  
+✅ Running queries safely  
+✅ Caching table metadata for quick access  
+
+### ⚙️ 3. Command Processing (commands.py)  
+Every bot command goes through here. It handles:  
+✅ Natural language to SQL conversion  
+✅ Running SQL queries  
+✅ Showing table info  
+✅ Formatting query results  
+
+### 🔧 4. Configuration (config.py)  
+Everything is neatly organized in one place, including:  
+✅ Discord bot settings  
+✅ Database connection details  
+✅ AI model configuration (OpenAI, Groq, etc.)  
+✅ Query limitations  
+
+---
+
+## 🧠 AI-Powered Querying  
+
+This bot isn’t just running SQL—it’s **thinking** (well, kind of). Thanks to **LangChain**, it can:  
+💡 Convert human language into SQL queries  
+🤖 Explain errors and suggest fixes  
+📖 Help users understand database structures  
+🔍 Check queries for complexity and safety  
+
+---
+
+## 🛠️ How to Use It  
+
+Talking to the bot is super easy! Just use these commands:  
+```
+!aiquery - Convert plain English to SQL  
+!hivesql - Execute SQL queries  
+!tablelist - Show available tables  
+!tableinfo - Display table schema  
+!help - Get AI-powered assistance  
+```  
+
+---
+
+## 🔐 Security & Performance  
+
+Keeping things safe and efficient is a top priority! The bot includes:  
+✅ Rate limiting (to prevent abuse)  
+✅ Daily query limits  
+✅ Error handling & sanitization  
+✅ Secure credential management with environment variables  
+
+---
+
+## 🚀 What’s Next?  
+
+This is just the beginning! Future improvements could include:  
+- **Query result caching** for faster responses  
+- **More AI models** to choose from  
+- **Smarter query validation**  
+- **Interactive query builder** for a more hands-on experience  
+- **Query history & analytics**  
+- **Plot Graphics**
+
+---
+
+This bot is a perfect example of how **AI + SQL + Discord** can come together to create something truly useful. Whether you're a SQL pro or just starting out, it makes database interaction **way more intuitive**!  
+
+🔗 **Check out the code on GitHub**: [GitHub Link](https://github.com/rferrari/HiveSQLDiscordBot)  
+
+---
+
+## Lets Build 🛠️
 
 ### Software Requirements
 - Python 3.8+
-- Microsoft ODBC Driver 17 for SQL Server
+- Microsoft ODBC Driver 18 for SQL Server
 - Discord Account
-- Groq API Key
+- OpenAi or Groq API Key 
 
 ### Required Packages
 - discord.py
@@ -208,7 +289,3 @@ As is
 
 # Disclaimer ⚠️
 This bot is provided as-is. Always be cautious when running SQL queries and ensure proper access controls.
-
-
-# TODO
-- plot graphics using panda
