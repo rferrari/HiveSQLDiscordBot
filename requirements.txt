@@ -14,7 +14,7 @@ openai
 
 # Database and SQL handling
 sqlalchemy
-pypyodbc
+pyodbc
 
 # Optional but recommended
 tiktoken
