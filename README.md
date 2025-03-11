@@ -1,4 +1,4 @@
-# HiveSQLDiscordBot 🤖💾
+# HiveSQLDiscordBot 📊🔗
 
 ## Overview
 HiveSQLDiscordBot is a powerful Discord bot that allows users to interact with HiveSQL databases directly through Discord channels. It offers two primary query modes:
