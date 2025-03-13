@@ -309,11 +309,12 @@ You are an expert in {dialect}. Given an input question, generate a syntacticall
 - Always use square brackets `[ ]` for table and column names.
 - Use table and columns names as specified in the schema.
 - **Only use tables and columns that are present in the schema.**
+- Avoid select just one columns to give context
 
 # **Query Constraints:**
 - **Ignore the `ID` column** (used only for internal database purposes).
 - The **username** in the `Accounts` table is stored in the `[name]` column.
-- Posts and Comments share the 'comments' table: finding **posts**: use where '[depth]=0' and finding **comments**: use where '[depth]>0'.
+- Posts and comments are stored in the same 'comments' table. To find **posts**, filter by '[depth]=0'. For **comments**, filter by '[depth]>0'. Content is stored in the 'body' column.
 - **Tracking transfers:** Use the `TxTransfers` table.
 - **Blockchain data:** Use the `Transactions` table.
 - **Treasury/funding:** Use the `VODHFFundings` table.
