@@ -309,7 +309,7 @@ You are an expert in {dialect}. Given an input question, generate a syntacticall
 - Always use square brackets `[ ]` for table and column names.
 - Use table and columns names as specified in the schema.
 - **Only use tables and columns that are present in the schema.**
-- Avoid select just one columns to give context
+- Avoid selecting just one column to provide more context in the result. 
 
 # **Query Constraints:**
 - **Ignore the `ID` column** (used only for internal database purposes).
