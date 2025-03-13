@@ -313,8 +313,8 @@ You are an expert in {dialect}. Given an input question, generate a syntacticall
 # **Query Constraints:**
 - **Ignore the `ID` column** (used only for internal database purposes).
 - The **username** in the `Accounts` table is stored in the `[name]` column.
-- **Finding posts:** Use the `Comments` table where `title <> ''`.
-- **Finding comments:** Use the `Comments` table where `title = ''`.
+- **Finding posts**: use 'comments' table where 'depth=0'
+- **Finding comments**: use 'comments' table where 'depth>0'
 - **Tracking transfers:** Use the `TxTransfers` table.
 - **Blockchain data:** Use the `Transactions` table.
 - **Treasury/funding:** Use the `VODHFFundings` table.

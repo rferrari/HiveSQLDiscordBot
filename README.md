@@ -91,8 +91,6 @@ This is just the beginning! Future improvements could include:
 
 This bot is an example of how **AI + SQL + Discord** can come together to create something truly useful. Whether you're a SQL pro or just starting out, it makes database interaction **way more intuitive**!  
 
-🔗 **Check out the code on GitHub**: [GitHub Link](https://github.com/rferrari/HiveSQLDiscordBot)  
-
 ---
 
 ## Lets Build 🛠️
@@ -115,8 +113,8 @@ This bot is an example of how **AI + SQL + Discord** can come together to create
 
 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/HiveSQLDiscordBot.git
-cd HiveSQLDiscordBot
+git clone https://github.com/rferrari/hivesql_aibot.git
+cd hivesql_aibot
 ```
 
 # Create Virtual Environment
@@ -203,7 +201,7 @@ The bot supports the following commands:
 ## Direct SQL Query
 Use the `!hivesql` command to execute direct SQL queries:
 ```sql
-!hivesql SELECT TOP 100 * FROM YourTable
+!hivesql SELECT TOP 100 * FROM Table
 ```
 
 ## AI-Powered Query
