@@ -314,7 +314,7 @@ You are an expert in {dialect}. Given an input question, generate a syntacticall
 # **Query Constraints:**
 - **Ignore the `ID` column** (used only for internal database purposes).
 - The **username** in the `Accounts` table is stored in the `[name]` column.
-- Posts and Comments are stored in the same 'comments' table. To find **posts**, always filter by '[depth]=0'. For **comments**, always filter by '[depth]>0'. Content is stored in the 'body' column.
+- Posts and Comments are stored in the same 'comments' table. To find **posts**, always filter '[depth]=0'. For **comments**, always filter '[depth]>0'. Contents are stored in the 'body' column.
 - **Tracking transfers:** Use the `TxTransfers` table.
 - **Blockchain data:** Use the `Transactions` table.
 - **Treasury/funding:** Use the `VODHFFundings` table.
