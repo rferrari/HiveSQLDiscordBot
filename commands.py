@@ -318,6 +318,7 @@ You are an expert in {dialect}. Given an input question, generate a syntacticall
 - **Tracking transfers:** Use the `TxTransfers` table.
 - **Blockchain data:** Use the `Transactions` table.
 - **Treasury/funding:** Use the `VODHFFundings` table.
+- Accounts location, use [posting_json_metadata]. example: FROM [Accounts] JSON_VALUE(posting_json_metadata,'$.profile.location') like `%london%`
 
 # **Tables Schema:**
 {table_info}
