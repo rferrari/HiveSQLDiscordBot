@@ -1,3 +1,4 @@
+import sys
 import discord
 import asyncio
 from config import DISCORD_CONFIG, DB_CONFIG, LLM_CONFIG, DEBUG_MODE
@@ -14,13 +15,10 @@ class HiveSQLBot(discord.Client):
         super().__init__(
             command_prefix='!', 
             intents=intents,
-            reconnect=True,             # Enable auto-reconnect
-            heartbeat_timeout=60.0,     # Increase heartbeat timeout
-            guild_ready_timeout=5.0     # Reduce guild timeout
+            # reconnect=True,             # Enable auto-reconnect
+            # heartbeat_timeout=60.0,     # Increase heartbeat timeout
+            # guild_ready_timeout=5.0     # Reduce guild timeout
         )
-        
-        # Create event loop for async operations    
-        self.loop = asyncio.get_event_loop()
 
         self.db = Database(DB_CONFIG)
         
@@ -121,10 +119,11 @@ class HiveSQLBot(discord.Client):
             async with message.channel.typing():
                 # if message.content.startswith('!aiquery'):
                 if any(alias == command for alias in self.command_aliases['aiquery']):
-                    query = message.content[len(command):].strip()    # Remove the actual command used from message
+                    query = message.content[len(command):].strip()
+                    # response = await self.command_handler.handle_aiquery(query, user_display_name)
                     response = await self.execute_with_timeout(
-                        await self.command_handler.handle_aiquery(query, user_display_name),
-                        timeout=120  # 5 minutes max
+                        lambda: self.command_handler.handle_aiquery(query, user_display_name), 
+                        timeout=60
                     )
 
                     await message.channel.send(
@@ -166,32 +165,31 @@ class HiveSQLBot(discord.Client):
             if DEBUG_MODE:
                 print("Bot disconnected from Discord. Attempting to reconnect...")
             
-            # Attempt to reconnect
-            retry_count = 0
-            while not self.is_closed() and retry_count < 5:
-                try:
-                    await self.start(DISCORD_CONFIG["token"])
-                    break
-                except Exception as e:
-                    retry_count += 1
-                    if DEBUG_MODE:
-                        print(f"Reconnection attempt {retry_count} failed: {e}")
-                    await asyncio.sleep(5 * retry_count)  # Exponential backoff
+            # # Attempt to reconnect
+            # retry_count = 0
+            # while not self.is_closed() and retry_count < 5:
+            #     try:
+            #         await self.start(DISCORD_CONFIG["token"])
+            #         break
+            #     except Exception as e:
+            #         retry_count += 1
+            #         if DEBUG_MODE:
+            #             print(f"Reconnection attempt {retry_count} failed: {e}")
+            #         await asyncio.sleep(5 * retry_count)  # Exponential backoff
 
-    async def execute_with_timeout(self, coroutine, timeout=60):
+    async def execute_with_timeout(self, coroutine, timeout=20):
         """Execute a coroutine with timeout in a separate task"""
         try:
-            # Create task to run in background
-            task = asyncio.create_task(coroutine)
+            task = asyncio.create_task(coroutine())  # Ensure coroutine is called
             return await asyncio.wait_for(task, timeout=timeout)
         except asyncio.TimeoutError:
-            # Cancel the task if it times out
             task.cancel()
             try:
-                await task
+                await task  
             except asyncio.CancelledError:
                 pass
             raise TimeoutError("Query execution took too long")
+    
 
     def _setup_llm(self, temperature, name, model=""):
         if not LLM_CONFIG["groq_api_key"] and not LLM_CONFIG["openai_api_key"]:
@@ -223,18 +221,30 @@ class HiveSQLBot(discord.Client):
         return llm
 
 
+async def run_bot():
+    bot = HiveSQLBot()
+    try:
+        await bot.start(DISCORD_CONFIG["token"])  # Use start() instead of run()
+    except KeyboardInterrupt:
+        print("\nBot shutdown requested...")
+        await bot.close()
+        sys.exit(0)  # Proper exit
+
 
 if __name__ == "__main__":
     print("-"*30)
     print("HiveSQL Discord Bot")
     print("Starting up...")
     print("")
+
     while True:
         try:
-            bot = HiveSQLBot()
-            bot.run(DISCORD_CONFIG["token"])
+            asyncio.run(run_bot())  # Runs the bot asynchronously
+        except KeyboardInterrupt:
+            print("\nForce shutdown detected...")
+            sys.exit(0)  # Ensures clean exit
         except Exception as e:
-            if DEBUG_MODE:
-                print(f"Bot crashed: {e}")
-            print("Restarting bot in 5 seconds...")
-            asyncio.sleep(5)
+            print(f"\nBot crashed: {e}")
+            sys.exit(1)  # Ensures clean exit
+            # print("Restarting bot in 5 seconds...")
+            # asyncio.sleep(5)  # Sleep before restarting
