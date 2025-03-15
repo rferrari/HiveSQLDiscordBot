@@ -15,10 +15,13 @@ class HiveSQLBot(discord.Client):
             command_prefix='!', 
             intents=intents,
             reconnect=True,             # Enable auto-reconnect
-            heartbeat_timeout=150.0,    # Increase heartbeat timeout
+            heartbeat_timeout=60.0,     # Increase heartbeat timeout
             guild_ready_timeout=5.0     # Reduce guild timeout
         )
         
+        # Create event loop for async operations    
+        self.loop = asyncio.get_event_loop()
+
         self.db = Database(DB_CONFIG)
         
         # Add command aliases
@@ -119,7 +122,11 @@ class HiveSQLBot(discord.Client):
                 # if message.content.startswith('!aiquery'):
                 if any(alias == command for alias in self.command_aliases['aiquery']):
                     query = message.content[len(command):].strip()    # Remove the actual command used from message
-                    response = await self.command_handler.handle_aiquery(query, user_display_name)
+                    response = await self.execute_with_timeout(
+                        await self.command_handler.handle_aiquery(query, user_display_name),
+                        timeout=120  # 5 minutes max
+                    )
+
                     await message.channel.send(
                         content=f"{user_display_name}, here is your query results:", 
                         file=discord.File(response))
@@ -172,11 +179,19 @@ class HiveSQLBot(discord.Client):
                     await asyncio.sleep(5 * retry_count)  # Exponential backoff
 
     async def execute_with_timeout(self, coroutine, timeout=60):
-            """Execute a coroutine with timeout"""
+        """Execute a coroutine with timeout in a separate task"""
+        try:
+            # Create task to run in background
+            task = asyncio.create_task(coroutine)
+            return await asyncio.wait_for(task, timeout=timeout)
+        except asyncio.TimeoutError:
+            # Cancel the task if it times out
+            task.cancel()
             try:
-                return await asyncio.wait_for(coroutine, timeout=timeout)
-            except asyncio.TimeoutError:
-                raise TimeoutError("Query execution took too long")
+                await task
+            except asyncio.CancelledError:
+                pass
+            raise TimeoutError("Query execution took too long")
 
     def _setup_llm(self, temperature, name, model=""):
         if not LLM_CONFIG["groq_api_key"] and not LLM_CONFIG["openai_api_key"]:
