@@ -10,7 +10,13 @@ class HiveSQLBot(discord.Client):
         intents = discord.Intents.default()
         intents.message_content = True
         intents.messages = True
-        super().__init__(command_prefix='!', intents=intents)
+        super().__init__(
+            command_prefix='!', 
+            intents=intents
+            reconnect=True,             # Enable auto-reconnect
+            heartbeat_timeout=150.0,    # Increase heartbeat timeout
+            guild_ready_timeout=5.0     # Reduce guild timeout
+        )
         
         self.db = Database(DB_CONFIG)
         
