@@ -47,7 +47,7 @@ class CommandHandler:
         except Exception as e:
             if (DEBUG_MODE):
                 print(f"Error in !tablelist: {str(e)}")
-            return (f"An error occurred: {str(e)}")
+            return (f"```{str(e)}```")
 
 
     async def handle_tableinfo(self, message, user_display_name):
@@ -282,7 +282,7 @@ Try Other Table or Fix Colluns names exactly how is described on schema.
                 print("")
                 
                 if attempt == max_retries - 1:
-                    raise Exception(f"Failed after {max_retries} attempts. Last error: {last_error}")
+                    raise Exception(f"Failed after {max_retries} attempts. Last error:\n```sql\n{last_error}\n```")
                 
                 # Wait briefly before retry
                 await asyncio.sleep(retry_delay)
